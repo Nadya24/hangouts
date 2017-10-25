@@ -8,14 +8,24 @@ with open('Hangouts.json') as data_file:
 
 # R: захардконены имена, они должны доставаться из самого файла.
 #    См. participant_data и fallback_name
-messages = {
-    'nadya': [],
-    'alexandr': []
-
-    }
+messages = {}
+dict_gaia_id = {}
+all_words = {}
+counts = {}
 
 # R: [0] - почти наверняка ошибка, т.к. если это массив,
 #    то следует смотреть все элементы, а не только первый.
+partners = data['conversation_state'][0]['conversation_state']['conversation']['participant_data']
+for element in partners:
+    dict_gaia_id[element['fallback_name']] = element['id']['gaia_id']
+    messages[element['fallback_name']] = []
+    counts[element['fallback_name']] = {}
+    all_words[element['fallback_name']] = []
+    # if element['fallback_name'] == 'demetranadya93@gmail.com':
+    #     gaia_my_id = element['id']['gaia_id']
+
+# Sprint(dict_gaia_id)
+
 events = data['conversation_state'][0]['conversation_state']['event']
 #print(events)
 for el in events:
@@ -53,12 +63,9 @@ for el in events:
                 #
                 #    То, что ты два раза написала одну строку тебя должно было насторожить.
                 #Alex
-                if gaia_id=='116003021892114994463':
-                    messages['alexandr'].append(el['chat_message']['message_content']['segment'][0]['text'])
-
-                #Nadya
-                if gaia_id=='112073426858751033150':
-                    messages['nadya'].append(el['chat_message']['message_content']['segment'][0]['text'])
+                for name,el_gaia_id in dict_gaia_id.items():
+                    if gaia_id == el_gaia_id:
+                        messages[name].append(el['chat_message']['message_content']['segment'][0]['text'])
             else:
                 continue
         else:
@@ -69,18 +76,22 @@ for el in events:
 #    т.е. функции называются через подчёркивание маленькими буквами: get_words()
 def getWords(text):
     return re.compile('\w+').findall(text)  # R: отбивай функции пустыми строками
-all_words = []
-for mes in messages['alexandr']:
-    all_words.extend(getWords(mes))
-print(all_words)
-counts = {}  # R: вот этот подсчёт хороший кусок кода для вынесения в отдельную функцию
-for word in all_words:
-    if word in counts:
-        counts[word] += 1
-    else:
-        counts[word] = 1
-sorted_x = sorted(counts.items(), key=operator.itemgetter(1))
-print(sorted_x[-10:])  # R: можно было отсортировать в обратном порядке и вывести первые 10
+
+for key in messages:
+    for mes in messages[key]:
+        all_words[key].extend(getWords(mes))
+    #print(all_words)
+  # R: вот этот подсчёт хороший кусок кода для вынесения в отдельную функцию
+for key in all_words:
+    for word in all_words[key]:
+        if word in counts[key]:
+            counts[key][word] += 1
+        else:
+            counts[key][word] = 1
+    sorted_x = sorted(counts[key].items(), key=operator.itemgetter(1))
+    print('-------------')
+    print(key+':')
+    print(sorted_x[-10:])  # R: можно было отсортировать в обратном порядке и вывести первые 10
 
 
 # R: задача рефакторинга 1: применить все замечания, кроме автоматического узнавания
